@@ -1,4 +1,4 @@
-import 'api_exception.dart';
+import './exception/api_exception.dart';
 
 sealed class ApiResult<T> {
   const ApiResult();

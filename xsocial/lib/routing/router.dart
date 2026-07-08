@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../features/home/pages/demo_page.dart';
 
 /// The GoRouter configuration for XSocial.
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -15,6 +16,11 @@ final router = GoRouter(
       name: 'home',
       builder: (context, state) => const PlaceholderPage(title: 'Home'),
     ),
+    GoRoute(
+      path: '/login',
+      name: 'login',
+      builder: (context, state) => const NetworkDemoPage(),
+    ),
   ],
 );
 
@@ -28,7 +34,13 @@ class PlaceholderPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: const Center(child: Text('Placeholder')),
+      body: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        const Text('Placeholder'),
+        IconButton(
+          icon: const Icon(Icons.arrow_forward),
+          onPressed: () => context.push('/login'),
+        ),
+      ]),
     );
   }
 }

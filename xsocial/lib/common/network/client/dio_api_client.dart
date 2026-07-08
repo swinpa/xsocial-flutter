@@ -4,6 +4,7 @@ import '../exception/api_exception.dart';
 import '../http_options.dart';
 import '../model/api_response.dart';
 import '../network_config.dart';
+import '../dio/dio_factory.dart';
 import '../request/http_request.dart';
 import '../typedef.dart';
 import 'api_client.dart';
@@ -11,35 +12,32 @@ import 'api_client.dart';
 final class DioApiClient implements ApiClient {
   DioApiClient({
     required NetworkConfig config,
-    HttpOptions options = const HttpOptions(),
+    HttpOptions? options,
     Dio? dio,
   })  : _config = config,
-        _options = options,
-        _dio = dio ?? Dio() {
-    _initialize();
+        _options = config.defaultOptions.merge(options),
+        _dio = dio ?? DioFactory.create(config) {
+    _applyOptions();
   }
 
   final Dio _dio;
   final NetworkConfig _config;
   final HttpOptions _options;
 
-  void _initialize() {
-    _dio.options = BaseOptions(
-      baseUrl: _config.baseUrl,
-      headers: Map<String, dynamic>.from(_options.headers),
-      connectTimeout: _options.connectTimeout,
-      receiveTimeout: _options.receiveTimeout,
-      sendTimeout: _options.sendTimeout,
-      contentType: _options.contentType,
-      responseType: ResponseType.json,
-      followRedirects: false,
-      validateStatus: (status) {
-        return status != null && status >= 200 && status < 300;
-      },
-    );
+  /// Applies the per-client [HttpOptions] overrides on top of
+  /// the global [NetworkConfig] defaults already baked into _dio.
+  void _applyOptions() {
+    final opts = _dio.options;
+    opts.connectTimeout = _options.connectTimeout ?? _config.connectTimeout;
+    opts.receiveTimeout = _options.receiveTimeout ?? _config.receiveTimeout;
+    opts.sendTimeout = _options.sendTimeout ?? _config.sendTimeout;
 
-    if (_config.interceptors.isNotEmpty) {
-      _dio.interceptors.addAll(_config.interceptors);
+    if (_options.headers.isNotEmpty) {
+      opts.headers.addAll(_options.headers);
+    }
+
+    if (_options.contentType != null) {
+      opts.contentType = _options.contentType;
     }
   }
 
@@ -49,6 +47,9 @@ final class DioApiClient implements ApiClient {
     DataDecoder<T>? decoder,
   }) async {
     try {
+      // 合并层级：config.defaultOptions < client._options < request.options
+      final mergedOptions = _options.merge(request.options);
+
       final response = await _dio.request<dynamic>(
         request.path,
         data: request.body,
@@ -56,7 +57,7 @@ final class DioApiClient implements ApiClient {
         cancelToken: request.cancelToken,
         onSendProgress: request.onSendProgress,
         onReceiveProgress: request.onReceiveProgress,
-        options: _buildOptions(request),
+        options: _buildOptions(mergedOptions, request),
       );
 
       return _parseResponse<T>(response.data, decoder);
@@ -69,16 +70,16 @@ final class DioApiClient implements ApiClient {
     }
   }
 
-  Options _buildOptions(HttpRequest request) {
+  Options _buildOptions(HttpOptions mergedOptions, HttpRequest request) {
     return Options(
       method: request.method.value,
       headers: {
-        ..._options.headers,
+        ...mergedOptions.headers,
         ...request.headers,
       },
-      contentType: request.contentType ?? _options.contentType,
+      contentType: request.contentType ?? mergedOptions.contentType,
       extra: {
-        ..._options.extra,
+        ...mergedOptions.extra,
         ...request.extra,
       },
       responseType: ResponseType.json,
@@ -110,7 +111,13 @@ final class DioApiClient implements ApiClient {
       if (decoder != null) {
         data = decoder(raw.data);
       } else {
-        data = raw.data as T?;
+        // When no decoder is provided, attempt a safe cast.
+        // In debug mode, assert the runtime type matches T.
+        assert(
+          raw.data is T,
+          'Type mismatch: expected $T, got ${raw.data.runtimeType}',
+        );
+        data = raw.data as T;
       }
     }
 

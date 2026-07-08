@@ -35,9 +35,3 @@ typedef JsonParser<T> = T Function(Json json);
 /// decoder: (json) => json as String
 /// ```
 typedef DataDecoder<T> = T Function(Object? value);
-
-/// Upload / Download progress callback.
-typedef ProgressCallback = void Function(
-  int current,
-  int total,
-);

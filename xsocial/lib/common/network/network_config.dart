@@ -1,6 +1,5 @@
-import 'package:dio/dio.dart';
-
 import 'http_options.dart';
+import 'interceptor/http_interceptor.dart';
 
 /// Global network configuration.
 ///
@@ -37,10 +36,11 @@ final class NetworkConfig {
   /// All requests will merge their own options with this object.
   final HttpOptions defaultOptions;
 
-  /// Global Dio interceptors.
+  /// Global interceptors.
   ///
-  /// These are added to the Dio instance on initialization.
-  final List<Interceptor> interceptors;
+  /// These are transport-layer agnostic and will be converted
+  /// to the transport's native interceptor type by the client.
+  final List<HttpInterceptor> interceptors;
 
   NetworkConfig copyWith({
     String? baseUrl,
@@ -48,7 +48,7 @@ final class NetworkConfig {
     Duration? receiveTimeout,
     Duration? sendTimeout,
     HttpOptions? defaultOptions,
-    List<Interceptor>? interceptors,
+    List<HttpInterceptor>? interceptors,
   }) {
     return NetworkConfig(
       baseUrl: baseUrl ?? this.baseUrl,
