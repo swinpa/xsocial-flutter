@@ -27,7 +27,15 @@ final networkConfigProvider = Provider<NetworkConfig>((ref) {
 // ---------------------------------------------------------------------------
 final apiClientProvider = Provider((ref) {
   final config = ref.watch(networkConfigProvider);
-  return DioApiClient(config: config);
+  return DioApiClient(
+    config: config,
+    // 每次请求前动态获取通用请求头，支持响应式更新。
+    headersProvider: () => {
+      'Accept-Language': 'zh-CN',
+      'Platform': 'mobile',
+      'App-Version': '1.0.0',
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------

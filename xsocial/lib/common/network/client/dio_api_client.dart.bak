@@ -8,51 +8,13 @@ import '../dio/dio_factory.dart';
 import '../request/http_request.dart';
 import '../typedef.dart';
 import 'api_client.dart';
-import '../../appinfo/appinfo.dart';
-
-/// 通用请求头提供者。
-///
-/// 每次发起请求时会调用此函数来获取通用的请求头，
-/// 支持从任何地方动态读取（如 ref.watch、SecureStorage 等）。
-/// HttpRequest 的请求头优先级高于此处返回值。
-typedef HeadersProvider = Map<String, dynamic> Function();
-
-/// 默认的通用请求头，包含设备与应用信息。
-///
-/// 可通过 [DioApiClient.headersProvider] 覆盖。
-HeadersProvider _defaultHeadersProvider = () {
-  // 这些值应在 app 启动时根据实际情况初始化
-
-  Map<String, dynamic> headers = {
-      'lang': 'en',
-      'appVersion': AppInfo.obj.version,
-      'appType': 'ios',
-      'osType': '2',
-      'osVersion': AppInfo.obj.osVersion,
-      'osUuid': AppInfo.obj.osUuid,
-      'phoneBrand': AppInfo.obj.phoneBrand,
-      'phoneType': AppInfo.obj.phoneType,
-      'phoneOsVersion': AppInfo.obj.phoneOsVersion,
-    };
-    var keys = headers.keys.toList()..sort();
-    var s = keys.map((e) => "$e=${headers[e]}").join("&");
-    headers["sign"] = s;
-    print("DioApiClient default headers:\n$headers");
-    // for (var key in keys) {
-    //   print("$key -> ${headers[key]}");
-    // }
-
-    return headers;
-};
 
 final class DioApiClient implements ApiClient {
   DioApiClient({
     required NetworkConfig config,
     HttpOptions? options,
     Dio? dio,
-    HeadersProvider? headersProvider,
   })  : _config = config,
-        _headersProvider = headersProvider ?? _defaultHeadersProvider,
         _options = config.defaultOptions.merge(options),
         _dio = dio ?? DioFactory.create(config) {
     _applyOptions();
@@ -62,9 +24,6 @@ final class DioApiClient implements ApiClient {
   final NetworkConfig _config;
   final HttpOptions _options;
 
-  /// 每次请求发起前会调用此函数获取通用请求头。
-  final HeadersProvider _headersProvider;
-  HeadersProvider get headersProvider => _headersProvider;
   /// Applies the per-client [HttpOptions] overrides on top of
   /// the global [NetworkConfig] defaults already baked into _dio.
   void _applyOptions() {
@@ -88,9 +47,7 @@ final class DioApiClient implements ApiClient {
     DataDecoder<T>? decoder,
   }) async {
     try {
-      // 合并层级（后者覆盖前者）：
-      //   config.defaultOptions < client._options < headersProvider < request.headers
-      final dynamicHeaders = _headersProvider();
+      // 合并层级：config.defaultOptions < client._options < request.options
       final mergedOptions = _options.merge(request.options);
 
       final response = await _dio.request<dynamic>(
@@ -100,7 +57,7 @@ final class DioApiClient implements ApiClient {
         cancelToken: request.cancelToken,
         onSendProgress: request.onSendProgress,
         onReceiveProgress: request.onReceiveProgress,
-        options: _buildOptions(mergedOptions, request, dynamicHeaders),
+        options: _buildOptions(mergedOptions, request),
       );
 
       return _parseResponse<T>(response.data, decoder);
@@ -113,16 +70,11 @@ final class DioApiClient implements ApiClient {
     }
   }
 
-  Options _buildOptions(
-    HttpOptions mergedOptions,
-    HttpRequest request,
-    Map<String, dynamic> dynamicHeaders,
-  ) {
+  Options _buildOptions(HttpOptions mergedOptions, HttpRequest request) {
     return Options(
       method: request.method.value,
       headers: {
         ...mergedOptions.headers,
-        ...dynamicHeaders,
         ...request.headers,
       },
       contentType: request.contentType ?? mergedOptions.contentType,
@@ -214,5 +166,4 @@ final class DioApiClient implements ApiClient {
         );
     }
   }
-
 }

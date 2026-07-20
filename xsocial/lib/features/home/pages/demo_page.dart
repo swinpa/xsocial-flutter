@@ -2,11 +2,6 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../common/network/client/dio_api_client.dart';
-import '../../../common/network/http_options.dart';
-import '../../../common/network/network_config.dart';
-import '../../../common/network/parser.dart';
-import '../../../common/network/request/http_request.dart';
 
 /// A demo page showcasing all request patterns.
 final class NetworkDemoPage extends ConsumerWidget {

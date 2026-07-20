@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 
-import '../http_options.dart';
 import '../interceptor/http_interceptor.dart';
 import '../network_config.dart';
 

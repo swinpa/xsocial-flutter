@@ -1,25 +1,42 @@
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter_udid/flutter_udid.dart';
+
 final class AppInfo {
-  AppInfo._({
-    required this.appName,
-    required this.packageName,
-    required this.version,
-    required this.buildNumber,
-  });
+  AppInfo._();
 
-  final String appName;
-  /// Package name (bundle identifier) of the app.
-  final String packageName;
-  final String version;
-  final String buildNumber;
+  static late final AppInfo obj;
 
-  static Future<AppInfo> load() async {
+  late final String appName;
+  late final String packageName;
+  late final String version;
+  late final String buildNumber;
+  
+  late final String lang;
+  late final String osUuid;
+  late final String osType;
+  late final String osVersion;
+  late final String phoneBrand;
+  late final String phoneType;
+  late final String phoneOsVersion;
+
+  static Future<void> init() async {
     final info = await PackageInfo.fromPlatform();
-    return AppInfo._(
-      appName: info.appName,
-      packageName: info.packageName,
-      version: info.version,
-      buildNumber: info.buildNumber,
-    );
+    final deviceInfo = DeviceInfoPlugin();
+    final iosInfo = await deviceInfo.iosInfo;
+    String uuid = await FlutterUdid.udid;
+    
+    obj = AppInfo._()
+      ..appName = info.appName
+      ..packageName = info.packageName
+      ..version = info.version
+      ..buildNumber = info.buildNumber
+      ..osUuid = uuid
+      ..osType = 'iOS'
+      ..osVersion = iosInfo.systemVersion
+      ..phoneBrand = 'Apple'
+      ..phoneType = iosInfo.model
+      ..phoneOsVersion = "iOS${iosInfo.systemVersion}";
   }
 }
+
