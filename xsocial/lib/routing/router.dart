@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/auth/models/login_response.dart';
 import '../features/auth/pages/login_page.dart';
-import '../features/home/pages/demo_page.dart';
 
 /// 根据登录状态自动跳转的路由配置。
 final goRouterProvider = Provider<GoRouter>((ref) {

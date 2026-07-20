@@ -3,78 +3,55 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../common/network/typedef.dart';
-import 'user.dart';
 
-/**
-  登录接口返回的原始数据。
- */
+
 final class LoginResponse {
   const LoginResponse({
-    required this.user_token,
+    required this.userToken,
     required this.nickname,
     required this.avatar,
-    required this.user_id,
-    required this.im_token,
-    required this.im_uid,
-    required this.rtc_uid,
-    required this.level,
-    required this.country,
-    this.sex,
-    this.nickname_color,
-    this.ct,
-    this.global_room_id,
-    this.ext_room_id,
+    required this.userId,
+    required this.imToken,
+    required this.imUid,
+    required this.rtcUid,
+    this.globalRoomId,
+    this.extRoomId,
   });
 
-  final String user_token;
+  final String userToken;
   final String nickname;
   final String avatar;
-  final String user_id;
-  final String im_token;
-  final String im_uid;
-  final String rtc_uid;
-  final String level;
-  final String country;
-  final String? sex;
-  final String? nickname_color;
-  final String? ct;
-  final String? global_room_id;
-  final String? ext_room_id;
+  final String userId;
+  final String imToken;
+  final String imUid;
+  final String rtcUid;
+  final String? globalRoomId;
+  final String? extRoomId;
 
   factory LoginResponse.fromJson(Json json) {
     return LoginResponse(
-      user_token: json['user_token'] as String,
+      userToken: json['user_token'] as String,
       nickname: json['nickname'] as String,
       avatar: json['avatar'] as String,
-      user_id: json['user_id'] as String,
-      im_token: json['im_token'] as String,
-      im_uid: json['im_uid'] as String,
-      rtc_uid: json['rtc_uid'] as String,
-      level: json['level'] as String,
-      country: json['country'] as String,
-      sex: json['sex'] as String?,
-      nickname_color: json['nickname_color'] as String?,
-      ct: json['ct'] as String?,
-      global_room_id: json['global_room_id'] as String?,
-      ext_room_id: json['ext_room_id'] as String?,
+      userId: json['user_id'] as String,
+      imToken: json['im_token'] as String,
+      imUid: json['im_uid'] as String,
+      rtcUid: json['rtc_uid'] as String,
+      globalRoomId: json['global_room_id'] as String?,
+      extRoomId: json['ext_room_id'] as String?,
     );
   }
 
   Json toJson() => {
-    'user_token': user_token,
+    'user_token': userToken,
     'nickname': nickname,
     'avatar': avatar,
-    'user_id': user_id,
-    'im_token': im_token,
-    'im_uid': im_uid,
-    'rtc_uid': rtc_uid,
-    'level': level,
-    'country': country,
-    'sex': sex,
-    'nickname_color': nickname_color,
-    'ct': ct,
-    'global_room_id': global_room_id,
-    'ext_room_id': ext_room_id,
+    'user_id': userId,
+    'im_token': imToken,
+    'im_uid': imUid,
+    'rtc_uid': rtcUid,
+    'global_room_id': globalRoomId,
+    'ext_room_id': extRoomId,
   };
 }
 
@@ -93,7 +70,7 @@ final class AuthResult {
 
 
 
-  static String? get userToken => _info?.user_token;
+  static String? get userToken => _info?.userToken;
 
   /// APP 启动时调用，从缓存恢复登录状态。
   static Future<void> load() async {

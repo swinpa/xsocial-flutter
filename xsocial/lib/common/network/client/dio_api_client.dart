@@ -9,7 +9,7 @@ import '../request/http_request.dart';
 import '../typedef.dart';
 import 'api_client.dart';
 import '../../appinfo/appinfo.dart';
-import '../../crypt/LLCrypt.dart';
+import '../../crypt/llcrypt.dart';
 import 'package:characters/characters.dart';
 import '../../language/lllanguage.dart';
 import '../../datetime/lldatetime.dart';

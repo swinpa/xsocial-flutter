@@ -31,7 +31,7 @@ final apiClientProvider = Provider<DioApiClient>((ref) {
   return DioApiClient(
     config: config,
     headersProvider: () {
-      final token = AuthResult.info?.user_token;
+      final token = AuthResult.info?.userToken;
       return {
         'Accept-Language': 'zh-CN',
         'Platform': 'mobile',
