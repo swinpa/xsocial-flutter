@@ -1,6 +1,7 @@
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_udid/flutter_udid.dart';
+import 'dart:ui';
 
 final class AppInfo {
   AppInfo._();
@@ -37,6 +38,15 @@ final class AppInfo {
       ..phoneBrand = 'Apple'
       ..phoneType = iosInfo.model
       ..phoneOsVersion = "iOS${iosInfo.systemVersion}";
+  }
+
+  String localeIdentifier() {
+    final locale = PlatformDispatcher.instance.locale;
+    if (locale.countryCode?.isNotEmpty == true) {
+      return '${locale.languageCode}_${locale.countryCode}';
+    }
+
+    return locale.languageCode;
   }
 }
 

@@ -14,7 +14,9 @@ final class AuthRepository {
   final ApiClient _client;
 
   /// POST /auth/login
-  Future<User> login(String phone, String password) async {
+  ///
+  /// Returns the raw [LoginResponse] from the server.
+  Future<LoginResponse> login(String phone, String password) async {
     final response = await _client.request<LoginResponse>(
       HttpRequest.post(
         '/auth/login',
@@ -25,7 +27,7 @@ final class AuthRepository {
       ),
       decoder: (json) => Parser.object(json, LoginResponse.fromJson),
     );
-    return response.data!.user;
+    return response.data!;
   }
 
   /// GET /user/profile

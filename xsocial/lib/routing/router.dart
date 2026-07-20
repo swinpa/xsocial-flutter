@@ -1,19 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../features/auth/models/login_response.dart';
+import '../features/auth/pages/login_page.dart';
 import '../features/home/pages/demo_page.dart';
 
-
-import '../common/network/client/dio_api_client.dart';
-import '../common/network/network_config.dart';
-
-/// The GoRouter configuration for XSocial.
+/// 根据登录状态自动跳转的路由配置。
 final goRouterProvider = Provider<GoRouter>((ref) {
-  return router;
+  return GoRouter(
+    initialLocation: '/',
+    redirect: (context, state) {
+      final loggedIn = AuthResult.info != null;
+      final onLogin = state.matchedLocation == '/login';
+
+      // 未登录且不在登录页 → 跳转登录页
+      if (!loggedIn && !onLogin) return '/login';
+      // 已登录且在登录页 → 跳转首页
+      if (loggedIn && onLogin) return '/';
+
+      return null;
+    },
+    routes: [
+      GoRoute(
+        path: '/',
+        name: 'home',
+        builder: (context, state) => const PlaceholderPage(title: 'Home'),
+      ),
+      GoRoute(
+        path: '/login',
+        name: 'login',
+        builder: (context, state) => const LoginPage(),
+      ),
+    ],
+  );
 });
 
 final router = GoRouter(
   initialLocation: '/',
+  redirect: (context, state) {
+    final loggedIn = AuthResult.info != null;
+    final onLogin = state.matchedLocation == '/login';
+
+    if (!loggedIn && !onLogin) return '/login';
+    if (loggedIn && onLogin) return '/';
+
+    return null;
+  },
   routes: [
     GoRoute(
       path: '/',
@@ -23,7 +56,7 @@ final router = GoRouter(
     GoRoute(
       path: '/login',
       name: 'login',
-      builder: (context, state) => const NetworkDemoPage(),
+      builder: (context, state) => const LoginPage(),
     ),
   ],
 );
@@ -38,36 +71,22 @@ class PlaceholderPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: 
-      
-      Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('This is a placeholder page.'),
-
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const Text('Placeholder'),
-            IconButton(
-              icon: const Icon(Icons.arrow_forward),
-              onPressed: () => context.push('/login'),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('This is a placeholder page.'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                await AuthResult.logout();
+                if (context.mounted) context.go('/login');
+              },
+              child: const Text('Logout'),
             ),
-          ]),
-
-          ElevatedButton(
-            onPressed: () async {
-              final client = DioApiClient(
-                  config: NetworkConfig(
-                      baseUrl: 'https://api.example.com',
-                    ),
-                  );
-              client.headersProvider();
-            },
-            child: const Text('HTTP Request Demo'),
-          ),
-        ],
+          ],
+        ),
       ),
-      
-      
     );
   }
 }

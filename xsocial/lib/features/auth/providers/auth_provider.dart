@@ -4,10 +4,11 @@ import '../../../common/network/client/dio_api_client.dart';
 import '../../../common/network/http_options.dart';
 import '../../../common/network/interceptor/http_interceptor.dart';
 import '../../../common/network/network_config.dart';
+import '../models/login_response.dart';
 import '../repository/auth_repository.dart';
 
 // ---------------------------------------------------------------------------
-// 1. NetworkConfig – initiated once at app start
+// 1. NetworkConfig
 // ---------------------------------------------------------------------------
 final networkConfigProvider = Provider<NetworkConfig>((ref) {
   return const NetworkConfig(
@@ -23,17 +24,20 @@ final networkConfigProvider = Provider<NetworkConfig>((ref) {
 });
 
 // ---------------------------------------------------------------------------
-// 2. ApiClient – created from config
+// 2. ApiClient – 动态注入 token
 // ---------------------------------------------------------------------------
-final apiClientProvider = Provider((ref) {
+final apiClientProvider = Provider<DioApiClient>((ref) {
   final config = ref.watch(networkConfigProvider);
   return DioApiClient(
     config: config,
-    // 每次请求前动态获取通用请求头，支持响应式更新。
-    headersProvider: () => {
-      'Accept-Language': 'zh-CN',
-      'Platform': 'mobile',
-      'App-Version': '1.0.0',
+    headersProvider: () {
+      final token = AuthResult.info?.user_token;
+      return {
+        'Accept-Language': 'zh-CN',
+        'Platform': 'mobile',
+        'App-Version': '1.0.0',
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
     },
   );
 });
@@ -46,6 +50,13 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 });
 
 // ---------------------------------------------------------------------------
+// 4. APP 启动时调用，从缓存恢复登录状态
+// ---------------------------------------------------------------------------
+final authInitProvider = FutureProvider<void>((ref) async {
+  await AuthResult.load();
+});
+
+// ---------------------------------------------------------------------------
 // Token interceptor
 // ---------------------------------------------------------------------------
 final class AuthTokenInterceptor implements HttpInterceptor {
@@ -53,11 +64,6 @@ final class AuthTokenInterceptor implements HttpInterceptor {
 
   @override
   Map<String, dynamic> onRequest(Map<String, dynamic> headers) {
-    // Read token from SecureStorage and attach it.
-    // final token = storage.getString('token');
-    // if (token != null) {
-    //   headers['Authorization'] = 'Bearer $token';
-    // }
     return headers;
   }
 

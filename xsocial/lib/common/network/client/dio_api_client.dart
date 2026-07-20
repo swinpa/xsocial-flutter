@@ -9,10 +9,16 @@ import '../request/http_request.dart';
 import '../typedef.dart';
 import 'api_client.dart';
 import '../../appinfo/appinfo.dart';
+import '../../crypt/LLCrypt.dart';
+import 'package:characters/characters.dart';
+import '../../language/lllanguage.dart';
+import '../../datetime/lldatetime.dart';
+import '../../logger/llloger.dart';
 
 /// 通用请求头提供者。
 ///
 /// 每次发起请求时会调用此函数来获取通用的请求头，
+import '../../../features/auth/models/login_response.dart';
 /// 支持从任何地方动态读取（如 ref.watch、SecureStorage 等）。
 /// HttpRequest 的请求头优先级高于此处返回值。
 typedef HeadersProvider = Map<String, dynamic> Function();
@@ -23,24 +29,65 @@ typedef HeadersProvider = Map<String, dynamic> Function();
 HeadersProvider _defaultHeadersProvider = () {
   // 这些值应在 app 启动时根据实际情况初始化
 
+  /*
+
+  [
+    "phoneBrand": "Apple", 
+    "phoneType": "x86_64", 
+    "osVersion": "26.3.1", 
+    "lang": "en", 
+    "timestamp": "1784518161", 
+    "appVersion": "1.1.0", 
+    "appType": "ios", 
+    "phoneOsVersion": "iOS26.3.1", 
+    "sign": "81349021bcfdab92cc358e9b47c6e8c2", 
+    "osUuid": "0DCB28B3-7F71-46AD-A994-5E8317B6607F", 
+    "osType": "2"]
+
+  */
   Map<String, dynamic> headers = {
       'lang': 'en',
       'appVersion': AppInfo.obj.version,
       'appType': 'ios',
       'osType': '2',
       'osVersion': AppInfo.obj.osVersion,
-      'osUuid': AppInfo.obj.osUuid,
+      'osUuid': "0DCB28B3-7F71-46AD-A994-5E8317B6607F",//AppInfo.obj.osUuid,
       'phoneBrand': AppInfo.obj.phoneBrand,
-      'phoneType': AppInfo.obj.phoneType,
+      'phoneType': "x86_64",//AppInfo.obj.phoneType,
       'phoneOsVersion': AppInfo.obj.phoneOsVersion,
     };
     var keys = headers.keys.toList()..sort();
-    var s = keys.map((e) => "$e=${headers[e]}").join("&");
-    headers["sign"] = s;
-    print("DioApiClient default headers:\n$headers");
-    // for (var key in keys) {
-    //   print("$key -> ${headers[key]}");
-    // }
+    var signString = keys.map((e) => "$e=${headers[e]}").join("&");
+    
+    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    headers["timestamp"] = timestamp.toString();
+    //appType=ios&appVersion=1.1.0&lang=en&osType=2&osUuid=0DCB28B3-7F71-46AD-A994-5E8317B6607F&osVersion=26.3.1&phoneBrand=Apple&phoneOsVersion=iOS26.3.1&phoneType=x86_64&1784527607
+    signString += "&$timestamp";
+
+    var iv = "435746de6c3ee5cf9f8183713325ba17";
+    var scretKey = iv + timestamp.toString();//435746de6c3ee5cf9f8183713325ba171784527607
+    //
+    var md5 = LLCrypt.llmd5(scretKey);// b94c01e644277a934bbba4d59a1205eb
+    var finalScretKey = md5.characters.toList().reversed.join();// be5021a95d4abbb439a772446e10c49b
+
+    //4625354e40e2dc283fbff4a6790e2f1c
+    var signValue = LLCrypt.hmac(signString, HmacAlgorithm.md5, finalScretKey);
+    headers["sign"] = signValue;
+
+    var token = AuthResult.userToken;
+    if (token != null) {
+      headers["userToken"] = token;
+    }
+    headers["utc"] = LLDateTime.utc;
+    headers["timezone"] = LLDateTime.timezone;
+
+
+    headers["localeIdentifier"] = LLLanguage.localeIdentifier;
+    headers["bundle_id"] = "com.xs.social.test";
+    headers["dlang"] = LLLanguage.sysLanguage;//"zh";
+    headers["idfa"] = "00000000-0000-0000-0000-000000000000";
+
+    logger.i("DioApiClient default headers:\n$headers");
 
     return headers;
 };
