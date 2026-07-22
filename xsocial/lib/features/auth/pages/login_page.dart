@@ -17,12 +17,48 @@ final class LoginPage extends ConsumerStatefulWidget {
 final class _LoginPageState extends ConsumerState<LoginPage> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _loading = false;
 
   @override
   void dispose() {
     _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _onLogin() async {
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (phone.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      final repo = ref.read(authRepositoryProvider);
+      final loginData = await repo.login(phone, password);
+      await AuthResult.login(loginData);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Welcome ${loginData.nickname}!')),
+        );
+        context.go('/');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -126,9 +162,9 @@ final class _LoginPageState extends ConsumerState<LoginPage> {
                     style: const TextStyle(
                       color: Colors.white,
                     ),
-                    onTap: () {
-                      // 这里打开web: https://gray-api.yayuesocialtest.com/privacy/user.html
-                    },
+                    onTap: () => context.push(
+                      '/webview?url=${Uri.encodeQueryComponent('https://gray-api.yayuesocialtest.com/privacy/user.html')}&title=${Uri.encodeQueryComponent('用户协议')}',
+                    ),
                   ),
 
                   const ClickableTextSpan(
@@ -140,9 +176,9 @@ final class _LoginPageState extends ConsumerState<LoginPage> {
                     style: const TextStyle(
                       color: Colors.white,
                     ),
-                    onTap: () {
-                      // 这里打开web: https://gray-api.yayuesocialtest.com/privacy/deprivacy.html
-                    },
+                    onTap: () => context.push(
+                      '/webview?url=${Uri.encodeQueryComponent('https://gray-api.yayuesocialtest.com/privacy/user.html')}&title=${Uri.encodeQueryComponent('隐私政策')}',
+                    ),
                   ),
                 ],
               )
