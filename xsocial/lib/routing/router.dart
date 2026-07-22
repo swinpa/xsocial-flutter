@@ -5,8 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/auth/models/login_response.dart';
 import '../features/auth/pages/login_page.dart';
 import '../common/widget/webview_page.dart';
+import '../features/home/pages/home_page.dart';
 
 /// 根据登录状态自动跳转的路由配置。
+/*
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
@@ -26,7 +28,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/',
         name: 'home',
-        builder: (context, state) => const PlaceholderPage(title: 'Home'),
+        builder: (context, state) => const HomePage(title: 'Home'),
       ),
       GoRoute(
         path: '/login',
@@ -45,7 +47,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
-
+*/
 final router = GoRouter(
   initialLocation: '/',
   redirect: (context, state) {
@@ -62,7 +64,7 @@ final router = GoRouter(
     GoRoute(
       path: '/',
       name: 'home',
-      builder: (context, state) => const PlaceholderPage(title: 'Home'),
+      builder: (context, state) => const HomePage(title: 'Home'),
     ),
     GoRoute(
       path: '/login',
@@ -82,31 +84,4 @@ final router = GoRouter(
 );
 
 /// Placeholder pages — replace with real screens.
-class PlaceholderPage extends StatelessWidget {
-  const PlaceholderPage({super.key, required this.title});
 
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('This is a placeholder page.'),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () async {
-                await AuthResult.logout();
-                if (context.mounted) context.go('/login');
-              },
-              child: const Text('Logout'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

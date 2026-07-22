@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyBwwxk4qzl4Oec0iXM02BUXCTpkMzoZ9ZU</string>
+	<key>BUNDLE_ID</key>
+	<string>com.xs.social.test</string>
+	<key>CLIENT_ID</key>
+	<string>464898300810-k12760u37c2rkrtlpluurg5f9l9mnqeb.apps.googleusercontent.com</string>
+	<key>GCM_SENDER_ID</key>
+	<string>677356098210</string>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:677356098210:ios:511514b15e4b1d12243dfb</string>
+	<key>IS_ADS_ENABLED</key>
+	<false/>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false/>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true/>
+	<key>IS_GCM_ENABLED</key>
+	<true/>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true/>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>PROJECT_ID</key>
+	<string>ay-hiplay-test</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.464898300810-k12760u37c2rkrtlpluurg5f9l9mnqeb</string>
+	<key>STORAGE_BUCKET</key>
+	<string>ay-hiplay-test.firebasestorage.app</string>
+</dict>
+</plist>

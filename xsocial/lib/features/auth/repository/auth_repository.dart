@@ -16,13 +16,33 @@ final class AuthRepository {
   /// POST /auth/login
   ///
   /// Returns the raw [LoginResponse] from the server.
-  Future<LoginResponse> login(String phone, String password) async {
+  Future<LoginResponse> login(Map<String,String> params) async {
     final response = await _client.request<LoginResponse>(
       HttpRequest.post(
-        '/auth/login',
+        '/user/login/login',
+        body: params,
+      ),
+      decoder: (json) => Parser.object(json, LoginResponse.fromJson),
+    );
+    return response.data!;
+  }
+
+  
+  /// POST /auth/social-login
+  ///
+  /// Log in with a third-party identity provider (Google, Apple, etc).
+  Future<LoginResponse> loginWithSocial({
+    required String provider,
+    required String idToken,
+    String? authorizationCode,
+  }) async {
+    final response = await _client.request<LoginResponse>(
+      HttpRequest.post(
+        '/auth/social-login',
         body: {
-          'phone': phone,
-          'password': password,
+          'provider': provider,
+          'id_token': idToken,
+          if (authorizationCode != null) 'authorization_code': authorizationCode,
         },
       ),
       decoder: (json) => Parser.object(json, LoginResponse.fromJson),

@@ -12,13 +12,8 @@ import '../repository/auth_repository.dart';
 // ---------------------------------------------------------------------------
 final networkConfigProvider = Provider<NetworkConfig>((ref) {
   return const NetworkConfig(
-    baseUrl: 'https://api.example.com',
-    defaultOptions: HttpOptions(
-      headers: {
-        'Accept-Language': 'zh-CN',
-        'Platform': 'mobile',
-      },
-    ),
+    baseUrl: 'https://gray-api.yayuesocialtest.com',
+    defaultOptions: HttpOptions(),
     interceptors: [AuthTokenInterceptor()],
   );
 });
@@ -30,15 +25,7 @@ final apiClientProvider = Provider<DioApiClient>((ref) {
   final config = ref.watch(networkConfigProvider);
   return DioApiClient(
     config: config,
-    headersProvider: () {
-      final token = AuthResult.info?.userToken;
-      return {
-        'Accept-Language': 'zh-CN',
-        'Platform': 'mobile',
-        'App-Version': '1.0.0',
-        if (token != null) 'Authorization': 'Bearer $token',
-      };
-    },
+    headersProvider: null,
   );
 });
 

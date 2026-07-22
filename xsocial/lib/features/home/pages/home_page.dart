@@ -1,7 +1,8 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../../auth/models/login_response.dart';
+import '../../auth/pages/login_page.dart';
 
 /// A demo page showcasing all request patterns.
 final class NetworkDemoPage extends ConsumerWidget {
@@ -144,3 +145,31 @@ final class _DemoSection extends StatelessWidget {
   }
 }
 
+class HomePage extends StatelessWidget {
+  const HomePage({super.key, required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('This is a placeholder page.'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                await AuthResult.logout();
+                if (context.mounted) context.go('/login');
+              },
+              child: const Text('Logout'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
