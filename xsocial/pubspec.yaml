@@ -38,6 +38,7 @@ dependencies:
   riverpod_annotation: ^2.6.1
 
   # Networking
+  webview_flutter: ^4.11.0
   dio: ^5.7.0
   # crypto
   crypto: ^3.0.6
@@ -91,6 +92,9 @@ flutter:
   assets:
     - assets/images/app_icon.png
     - assets/images/login_bg.png
+    - assets/images/login_appleicon.png
+    - assets/images/login_fbicon.png
+    - assets/images/login_googleicon.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
