@@ -8,6 +8,7 @@ import '../providers/auth_provider.dart';
 import '../models/login_response.dart';
 import '../widgets/login_button.dart';
 import '../../../common/widget/rich_text.dart';
+import 'package:flutter/foundation.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// ⚠️  Google Sign-In 配置（iOS 必填）
@@ -41,7 +42,7 @@ final class _LoginPageState extends ConsumerState<LoginPage> {
   bool _loading = false;
   bool _googleLoading = false;
   bool _appleLoading = false;
-
+  bool _phoneLoading = false;
   @override
   void dispose() {
     _phoneController.dispose();
@@ -49,42 +50,41 @@ final class _LoginPageState extends ConsumerState<LoginPage> {
     super.dispose();
   }
 
-  // Future<void> _onLogin() async {
-  //   final phone = _phoneController.text.trim();
-  //   final password = _passwordController.text.trim();
+  Future<void> _handlePhoneLogin() async {
+    try {
+      setState(() => _phoneLoading = true);
+    Map<String, String> params = {
+            "avatar": "https://img.yayuesocial.com/dev/upload/files/20250711/150359_20250711-150333.png",
+            "openid": "100003",
+            "account_type": "2"
+    };
+    
+      final repo = ref.read(authRepositoryProvider);
+      final loginData = await repo.login(params);
+      await AuthResult.login(loginData);
+      setState(() => _phoneLoading = false);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Welcome ${loginData.nickname}!')),
+        );
+        context.go('/');
+      }
+    } catch (e) {
+      debugPrint("[LoginPage] ❌ 登录失败: $e");
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _phoneLoading = false);
+    }
+    
 
-  //   if (phone.isEmpty || password.isEmpty) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('Please fill in all fields')),
-  //     );
-  //     return;
-  //   }
-
-  //   setState(() => _loading = true);
-
-  //   try {
-  //     final repo = ref.read(authRepositoryProvider);
-  //     final loginData = await repo.login(phone, password);
-  //     await AuthResult.login(loginData);
-
-  //     if (context.mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(content: Text('Welcome ${loginData.nickname}!')),
-  //       );
-  //       context.go('/');
-  //     }
-  //   } catch (e) {
-  //     if (context.mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(content: Text('Login failed: $e')),
-  //       );
-  //     }
-  //   } finally {
-  //     if (mounted) setState(() => _loading = false);
-  //   }
-  // }
+  }
 
   Future<void> _handleGoogleLogin() async {
+    debugPrint("\n========== [LoginPage] === Google 登录按钮点击 ==========");
     if (kGoogleClientId.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -116,6 +116,7 @@ final class _LoginPageState extends ConsumerState<LoginPage> {
     };
 
 
+      debugPrint("[LoginPage] Google token 获取成功, 调用后端 social-login...");
       final repo = ref.read(authRepositoryProvider);
       final loginData = await repo.login(params);
       await AuthResult.login(loginData);
@@ -127,6 +128,7 @@ final class _LoginPageState extends ConsumerState<LoginPage> {
         context.go('/');
       }
     } catch (e) {
+      debugPrint("[LoginPage] ❌ Google 登录失败: $e");
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Google login failed: $e')),
@@ -138,6 +140,7 @@ final class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _handleAppleLogin() async {
+    debugPrint("\n========== [LoginPage] === Apple 登录按钮点击 ==========");
     setState(() => _appleLoading = true);
     try {
       final credential = await SignInWithApple.getAppleIDCredential(
@@ -151,6 +154,7 @@ final class _LoginPageState extends ConsumerState<LoginPage> {
         throw Exception('Failed to get Apple identityToken');
       }
 
+      debugPrint("[LoginPage] Apple token 获取成功, 调用后端 social-login...");
       final repo = ref.read(authRepositoryProvider);
       final loginData = await repo.loginWithSocial(
         provider: 'apple',
@@ -166,6 +170,7 @@ final class _LoginPageState extends ConsumerState<LoginPage> {
         context.go('/');
       }
     } catch (e) {
+      debugPrint("[LoginPage] ❌ Apple 登录失败: $e");
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Apple login failed: $e')),
@@ -238,6 +243,7 @@ final class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 onPressed: () {
                   if (_appleLoading) return;
+                  debugPrint("Apple login pressed");
                   _handleAppleLogin();
 
                 },
@@ -254,9 +260,22 @@ final class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 onPressed: (){
                   if (_googleLoading) return;
+                  debugPrint("Google login pressed");
                   _handleGoogleLogin();
                 },
                 child: Text("Sign in with Google"),
+              ),
+              SizedBox(height: 62),
+
+              PrimaryButton(
+                leading: null,
+                onPressed: () {
+                  // Facebook login — TBD
+                if (_phoneLoading) return;
+                  debugPrint("phone login pressed");
+                  _handlePhoneLogin();
+                },
+                child: Text("Sign in with iphone"),
               ),
               SizedBox(height: 55),
               RichClickableText(

@@ -19,6 +19,7 @@ import '../../logger/llloger.dart';
 ///
 /// 每次发起请求时会调用此函数来获取通用的请求头，
 import '../../../features/auth/models/login_response.dart';
+import 'package:flutter/foundation.dart';
 /// 支持从任何地方动态读取（如 ref.watch、SecureStorage 等）。
 /// HttpRequest 的请求头优先级高于此处返回值。
 typedef HeadersProvider = Map<String, dynamic> Function();
@@ -134,12 +135,28 @@ final class DioApiClient implements ApiClient {
     HttpRequest request, {
     DataDecoder<T>? decoder,
   }) async {
-    try {
-      // 合并层级（后者覆盖前者）：
-      //   config.defaultOptions < client._options < headersProvider < request.headers
-      final dynamicHeaders = _headersProvider();
-      final mergedOptions = _options.merge(request.options);
+    debugPrint("⚡️[DioApiClient] ${request.method.value} ${_config.baseUrl}${request.path}");
+    // 合并层级（后者覆盖前者）：
+    //   config.defaultOptions < client._options < headersProvider < request.headers
+    final dynamicHeaders = _headersProvider();
+    final mergedOptions = _options.merge(request.options);
+    final mergedHeaders = <String, dynamic>{
+      ...mergedOptions.headers,
+      ...dynamicHeaders,
+      ...request.headers,
+    };
+    final fullUrl = '${_config.baseUrl}${request.path}';
 
+    // ─── 请求发起前日志 ───
+    _logRequest(
+      method: request.method.value,
+      url: fullUrl,
+      headers: mergedHeaders,
+      query: request.query,
+      body: request.body,
+    );
+
+    try {
       final response = await _dio.request<dynamic>(
         request.path,
         data: request.body,
@@ -150,8 +167,27 @@ final class DioApiClient implements ApiClient {
         options: _buildOptions(mergedOptions, request, dynamicHeaders),
       );
 
+      // ─── 接口返回日志 ───
+      _logResponse(
+        method: request.method.value,
+        url: fullUrl,
+        headers: mergedHeaders,
+        query: request.query,
+        body: request.body,
+        statusCode: response.statusCode,
+        data: response.data,
+      );
+
       return _parseResponse<T>(response.data, decoder);
     } on DioException catch (e) {
+      _logError(
+        method: request.method.value,
+        url: fullUrl,
+        headers: mergedHeaders,
+        query: request.query,
+        body: request.body,
+        error: e,
+      );
       throw _mapException(e);
     } catch (e) {
       throw ApiException.unknown(
@@ -260,6 +296,66 @@ final class DioApiClient implements ApiClient {
           message: exception.message ?? 'Unknown error',
         );
     }
+  }
+
+  // ───────────── Request/Response Logging ─────────────
+
+  void _logRequest({
+    required String method,
+    required String url,
+    required Map<String, dynamic> headers,
+    Map<String, dynamic>? query,
+    Object? body,
+  }) {
+    debugPrint('''
+[REQ] $method $url
+  Headers: ${_fmtMap(headers)}
+  Query:   ${query ?? '∅'}
+  Body:    ${body ?? '∅'}
+''');
+  }
+
+  void _logResponse({
+    required String method,
+    required String url,
+    required Map<String, dynamic> headers,
+    Map<String, dynamic>? query,
+    Object? body,
+    int? statusCode,
+    dynamic data,
+  }) {
+    final dataStr = data != null ? _truncate(data.toString(), 2000) : '∅';
+    debugPrint('''
+[RES] $method $url ($statusCode)
+  Request Body:   ${body ?? '∅'}
+  Request Header: ${_fmtMap(headers)}
+  Response Data:  $dataStr
+''');
+  }
+
+  void _logError({
+    required String method,
+    required String url,
+    required Map<String, dynamic> headers,
+    Map<String, dynamic>? query,
+    Object? body,
+    required DioException error,
+  }) {
+    debugPrint('''
+[ERR] $method $url (${error.response?.statusCode ?? '?'})
+  Error:   ${error.message}
+  Request: ${body ?? '∅'}
+  Detail:  ${error.response?.data}
+''');
+  }
+
+  String _fmtMap(Map<String, dynamic> map) {
+    return map.entries.map((e) => '${e.key}=${e.value}').join(', ');
+  }
+
+  String _truncate(String s, int max) {
+    if (s.length <= max) return s;
+    return '${s.substring(0, max)}\n... (truncated ${s.length - max} chars)';
   }
 
 }

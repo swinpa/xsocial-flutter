@@ -5,7 +5,7 @@
             "name": "xsocial",
             "request": "launch",
             "type": "dart",
-            "deviceId": "00008020-001E30D80281002E"//"EC2B779C-0F37-497C-A0F5-AA5F3C695827"//
+            "deviceId": "EC2B779C-0F37-497C-A0F5-AA5F3C695827"//"00008020-001E30D80281002E"//
         },
         {
             "name": "xsocial (profile mode)",

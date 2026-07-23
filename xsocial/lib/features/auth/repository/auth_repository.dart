@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../../../common/network/client/api_client.dart';
 import '../../../common/network/parser.dart';
 import '../../../common/network/request/http_request.dart';
@@ -17,6 +18,7 @@ final class AuthRepository {
   ///
   /// Returns the raw [LoginResponse] from the server.
   Future<LoginResponse> login(Map<String,String> params) async {
+    debugPrint("[AuthRepo] ➡️ POST /user/login/login  params=$params");
     final response = await _client.request<LoginResponse>(
       HttpRequest.post(
         '/user/login/login',
@@ -24,6 +26,7 @@ final class AuthRepository {
       ),
       decoder: (json) => Parser.object(json, LoginResponse.fromJson),
     );
+    debugPrint("[AuthRepo] ✅ /user/login/login 成功");
     return response.data!;
   }
 
@@ -36,6 +39,7 @@ final class AuthRepository {
     required String idToken,
     String? authorizationCode,
   }) async {
+    debugPrint("[AuthRepo] ➡️ POST /auth/social-login  provider=$provider  idToken=${idToken.substring(0, (idToken.length > 20 ? 20 : idToken.length))}...");
     final response = await _client.request<LoginResponse>(
       HttpRequest.post(
         '/auth/social-login',
@@ -47,6 +51,7 @@ final class AuthRepository {
       ),
       decoder: (json) => Parser.object(json, LoginResponse.fromJson),
     );
+    debugPrint("[AuthRepo] ✅ /auth/social-login 成功");
     return response.data!;
   }
 
