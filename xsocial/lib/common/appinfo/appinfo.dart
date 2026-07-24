@@ -1,7 +1,8 @@
-import 'package:package_info_plus/package_info_plus.dart';
+import 'dart:io';
+import 'dart:ui';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_udid/flutter_udid.dart';
-import 'dart:ui';
+import 'package:package_info_plus/package_info_plus.dart';
 
 final class AppInfo {
   AppInfo._();
@@ -12,7 +13,7 @@ final class AppInfo {
   late final String packageName;
   late final String version;
   late final String buildNumber;
-  
+
   late final String lang;
   late final String osUuid;
   late final String osType;
@@ -24,20 +25,36 @@ final class AppInfo {
   static Future<void> init() async {
     final info = await PackageInfo.fromPlatform();
     final deviceInfo = DeviceInfoPlugin();
-    final iosInfo = await deviceInfo.iosInfo;
     String uuid = await FlutterUdid.udid;
-    
+
+    String osType, osVersion, phoneType;
+    if (Platform.isIOS) {
+      final iosInfo = await deviceInfo.iosInfo;
+      osType = 'iOS';
+      osVersion = iosInfo.systemVersion;
+      phoneType = iosInfo.model;
+    } else if (Platform.isAndroid) {
+      final androidInfo = await deviceInfo.androidInfo;
+      osType = 'Android';
+      osVersion = androidInfo.version.release;
+      phoneType = androidInfo.model;
+    } else {
+      osType = Platform.operatingSystem;
+      osVersion = Platform.operatingSystemVersion;
+      phoneType = 'Desktop';
+    }
+
     obj = AppInfo._()
       ..appName = info.appName
       ..packageName = info.packageName
       ..version = info.version
       ..buildNumber = info.buildNumber
       ..osUuid = uuid
-      ..osType = 'iOS'
-      ..osVersion = iosInfo.systemVersion
+      ..osType = osType
+      ..osVersion = osVersion
       ..phoneBrand = 'Apple'
-      ..phoneType = iosInfo.model
-      ..phoneOsVersion = "iOS${iosInfo.systemVersion}";
+      ..phoneType = phoneType
+      ..phoneOsVersion = '$osType$osVersion';
   }
 
   String localeIdentifier() {

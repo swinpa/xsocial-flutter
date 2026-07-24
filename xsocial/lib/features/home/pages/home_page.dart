@@ -1,174 +1,146 @@
-import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../auth/models/login_response.dart';
-import '../../auth/pages/login_page.dart';
+import '../widgets/room_list_view.dart';
 
-/// A demo page showcasing all request patterns.
-final class NetworkDemoPage extends ConsumerWidget {
-  const NetworkDemoPage({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text('Network Demo'),
-        ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _DemoSection(
-            title: '1. Initialize',
-            code: '''
-final client = DioApiClient(
-  config: NetworkConfig(
-    baseUrl: 'https://api.example.com',
-  ),
-);
-''',
-          ),
-          _DemoSection(
-            title: '2. GET request',
-            code: '''
-final response = await client.request<User>(
-  HttpRequest.get('/user/profile'),
-  decoder: (json) => Parser.object(json, User.fromJson),
-);
-
-print(response.data); // User
-''',
-          ),
-          _DemoSection(
-            title: '3. POST with body',
-            code: '''
-final response = await client.request<LoginResponse>(
-  HttpRequest.post(
-    '/auth/login',
-    body: {'phone': '138xxxx', 'password': '***'},
-  ),
-  decoder: (json) => Parser.object(json, LoginResponse.fromJson),
-);
-''',
-          ),
-          _DemoSection(
-            title: '4. GET with query & cancel',
-            code: '''
-final cancelToken = CancelToken();
-
-final response = await client.request<List<User>>(
-  HttpRequest.get(
-    '/user/search',
-    query: {'keyword': 'alice'},
-    cancelToken: cancelToken,
-  ),
-  decoder: (json) => Parser.list(json, User.fromJson),
-);
-
-// later: cancelToken.cancel();
-''',
-          ),
-          _DemoSection(
-            title: '5. Upload progress',
-            code: '''
-final response = await client.request<UploadResult>(
-  HttpRequest.post(
-    '/file/upload',
-    body: formData,
-    onSendProgress: (sent, total) {
-      print('Upload: \$sent/\$total');
-    },
-  ),
-);
-''',
-          ),
-          _DemoSection(
-            title: '6. Paginated list',
-            code: '''
-// Server returns { "code":0, "data": [...] }
-final response = await client.request<List<Post>>(
-  HttpRequest.get('/feed/list', query: {'page': '1'}),
-  decoder: (json) => Parser.list(json, Post.fromJson),
-);
-
-print(response.data?.length ?? 0);
-''',
-          ),
-          _DemoSection(
-            title: '7. Decode a primitive',
-            code: '''
-final response = await client.request<String>(
-  HttpRequest.get('/version'),
-  decoder: Parser.value,
-);
-// response.data is String
-''',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-final class _DemoSection extends StatelessWidget {
-  const _DemoSection({required this.title, required this.code});
-  final String title;
-  final String code;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: SelectableText(
-              code,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class HomePage extends StatelessWidget {
+/*
+设计稿: 蓝湖 hiplay社交2 / 首页-推荐 (image_id=9447353a)
+设计帧 187.5×406px @0.5x → 实际dp = CSS值 × 2
+颜色标记:
+  主色青绿: Color.fromRGBO(17, 216, 195, 1)
+  游戏标签: Color.fromRGBO(70, 114, 255, 1)
+  朋友标签: Color.fromRGBO(255, 191, 0, 1)
+  文字主色: Color.fromRGBO(11, 17, 20, 1)
+  文字灰色: Color.fromRGBO(134, 139, 148, 1)
+  Tab未选中: Color.fromRGBO(153, 153, 153, 1)
+  底栏阴影: box-shadow 0 -2px 6px rgba(0,0,0,0.05)
+*/
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key, required this.title});
-
   final String title;
+
+  @override
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  int _selectedTab = 1; // 默认 Room tab
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: SafeArea(
+        bottom: false,
+        child: IndexedStack(
+          index: _selectedTab,
+          children: const [
+            _PlaceholderPage(label: 'HiPlay'),
+            RoomListView(),
+            _PlaceholderPage(label: 'Message'),
+            _PlaceholderPage(label: 'Profile'),
+          ],
+        ),
+      ),
+      bottomNavigationBar: _BottomNavBar(
+        selectedIndex: _selectedTab,
+        onChanged: (i) => setState(() => _selectedTab = i),
+      ),
+    );
+  }
+}
+
+class _BottomNavBar extends StatelessWidget {
+  const _BottomNavBar({required this.selectedIndex, required this.onChanged});
+  final int selectedIndex;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Color.fromRGBO(0, 0, 0, 0.05),
+            blurRadius: 12,
+            offset: Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 56,
+          child: Row(
+            children: [
+              _NavItem(icon: Icons.home_outlined, label: 'HiPlay', index: 0, selected: selectedIndex, onTap: onChanged),
+              _NavItem(icon: Icons.headphones_outlined, label: 'Room', index: 1, selected: selectedIndex, onTap: onChanged),
+              _NavItem(icon: Icons.chat_bubble_outline, label: 'Message', index: 2, selected: selectedIndex, onTap: onChanged),
+              _NavItem(icon: Icons.person_outline, label: 'Profile', index: 3, selected: selectedIndex, onTap: onChanged),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.index,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final int index;
+  final int selected;
+  final ValueChanged<int> onTap;
+
+  static const _activeColor = Color.fromRGBO(17, 216, 195, 1);
+  static const _inactiveColor = Color.fromRGBO(153, 153, 153, 1);
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = index == selected;
+    final color = isActive ? _activeColor : _inactiveColor;
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => onTap(index),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('This is a placeholder page.'),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () async {
-                await AuthResult.logout();
-                if (context.mounted) context.go('/login');
-              },
-              child: const Text('Logout'),
+            Icon(icon, size: 26, color: color),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                color: color,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PlaceholderPage extends StatelessWidget {
+  const _PlaceholderPage({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 20, color: Color.fromRGBO(134, 139, 148, 1)),
       ),
     );
   }

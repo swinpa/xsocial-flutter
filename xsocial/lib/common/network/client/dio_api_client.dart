@@ -13,13 +13,13 @@ import '../../crypt/llcrypt.dart';
 import 'package:characters/characters.dart';
 import '../../language/lllanguage.dart';
 import '../../datetime/lldatetime.dart';
-import '../../logger/llloger.dart';
+import 'package:flutter/foundation.dart';
 
 /// 通用请求头提供者。
 ///
 /// 每次发起请求时会调用此函数来获取通用的请求头，
 import '../../../features/auth/models/login_response.dart';
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
 /// 支持从任何地方动态读取（如 ref.watch、SecureStorage 等）。
 /// HttpRequest 的请求头优先级高于此处返回值。
 typedef HeadersProvider = Map<String, dynamic> Function();
@@ -28,24 +28,7 @@ typedef HeadersProvider = Map<String, dynamic> Function();
 ///
 /// 可通过 [DioApiClient.headersProvider] 覆盖。
 HeadersProvider _defaultHeadersProvider = () {
-  // 这些值应在 app 启动时根据实际情况初始化
-
-  /*
-
-  [
-    "phoneBrand": "Apple", 
-    "phoneType": "x86_64", 
-    "osVersion": "26.3.1", 
-    "lang": "en", 
-    "timestamp": "1784518161", 
-    "appVersion": "1.1.0", 
-    "appType": "ios", 
-    "phoneOsVersion": "iOS26.3.1", 
-    "sign": "81349021bcfdab92cc358e9b47c6e8c2", 
-    "osUuid": "0DCB28B3-7F71-46AD-A994-5E8317B6607F", 
-    "osType": "2"]
-
-  */
+  
   Map<String, dynamic> headers = {
       'lang': 'en',
       'appVersion': AppInfo.obj.version,
@@ -62,16 +45,12 @@ HeadersProvider _defaultHeadersProvider = () {
     
     final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     headers["timestamp"] = timestamp.toString();
-    //appType=ios&appVersion=1.1.0&lang=en&osType=2&osUuid=0DCB28B3-7F71-46AD-A994-5E8317B6607F&osVersion=26.3.1&phoneBrand=Apple&phoneOsVersion=iOS26.3.1&phoneType=x86_64&1784527607
     signString += "&$timestamp";
 
     var iv = "435746de6c3ee5cf9f8183713325ba17";
-    var scretKey = iv + timestamp.toString();//435746de6c3ee5cf9f8183713325ba171784527607
-    //
-    var md5 = LLCrypt.llmd5(scretKey);// b94c01e644277a934bbba4d59a1205eb
-    var finalScretKey = md5.characters.toList().reversed.join();// be5021a95d4abbb439a772446e10c49b
-
-    //4625354e40e2dc283fbff4a6790e2f1c
+    var scretKey = iv + timestamp.toString();
+    var md5 = LLCrypt.llmd5(scretKey);
+    var finalScretKey = md5.characters.toList().reversed.join();
     var signValue = LLCrypt.hmac(signString, HmacAlgorithm.md5, finalScretKey);
     headers["sign"] = signValue;
 
@@ -81,15 +60,10 @@ HeadersProvider _defaultHeadersProvider = () {
     }
     headers["utc"] = LLDateTime.utc;
     headers["timezone"] = LLDateTime.timezone;
-
-
     headers["localeIdentifier"] = LLLanguage.localeIdentifier;
     headers["bundle_id"] = "com.xs.social.test";
     headers["dlang"] = LLLanguage.sysLanguage;//"zh";
     headers["idfa"] = "00000000-0000-0000-0000-000000000000";
-
-    logger.i("DioApiClient default headers:\n$headers");
-
     return headers;
 };
 
@@ -135,7 +109,7 @@ final class DioApiClient implements ApiClient {
     HttpRequest request, {
     DataDecoder<T>? decoder,
   }) async {
-    debugPrint("⚡️[DioApiClient] ${request.method.value} ${_config.baseUrl}${request.path}");
+    
     // 合并层级（后者覆盖前者）：
     //   config.defaultOptions < client._options < headersProvider < request.headers
     final dynamicHeaders = _headersProvider();
@@ -149,8 +123,8 @@ final class DioApiClient implements ApiClient {
 
     // ─── 请求发起前日志 ───
     _logRequest(
-      method: request.method.value,
       url: fullUrl,
+      method: request.method.value,
       headers: mergedHeaders,
       query: request.query,
       body: request.body,
@@ -169,8 +143,8 @@ final class DioApiClient implements ApiClient {
 
       // ─── 接口返回日志 ───
       _logResponse(
-        method: request.method.value,
         url: fullUrl,
+        method: request.method.value,
         headers: mergedHeaders,
         query: request.query,
         body: request.body,
@@ -301,36 +275,38 @@ final class DioApiClient implements ApiClient {
   // ───────────── Request/Response Logging ─────────────
 
   void _logRequest({
-    required String method,
     required String url,
+    required String method,
     required Map<String, dynamic> headers,
     Map<String, dynamic>? query,
     Object? body,
   }) {
-    debugPrint('''
-[REQ] $method $url
-  Headers: ${_fmtMap(headers)}
-  Query:   ${query ?? '∅'}
-  Body:    ${body ?? '∅'}
-''');
+    final buf = StringBuffer()
+      ..writeln('════════ REQUEST ════════')
+      ..writeln('url: $url')
+      ..writeln('method: $method')
+      ..writeln('headers: ${_toJsonStr(headers)}');
+    if (query != null && query.isNotEmpty) buf.writeln('query: ${_toJsonStr(query)}');
+    buf.writeln('params: ${_toJsonStr(body)}');
+    debugPrint(buf.toString());
   }
 
   void _logResponse({
-    required String method,
     required String url,
+    required String method,
     required Map<String, dynamic> headers,
     Map<String, dynamic>? query,
     Object? body,
     int? statusCode,
     dynamic data,
   }) {
-    final dataStr = data != null ? _truncate(data.toString(), 2000) : '∅';
-    debugPrint('''
-[RES] $method $url ($statusCode)
-  Request Body:   ${body ?? '∅'}
-  Request Header: ${_fmtMap(headers)}
-  Response Data:  $dataStr
-''');
+    debugPrint('''════════ RESPONSE ════════
+url: $url
+method: $method
+status: $statusCode
+headers: ${_toJsonStr(headers)}
+params: ${_toJsonStr(body)}
+data: ${_toJsonStr(data)}''');
   }
 
   void _logError({
@@ -341,21 +317,40 @@ final class DioApiClient implements ApiClient {
     Object? body,
     required DioException error,
   }) {
-    debugPrint('''
-[ERR] $method $url (${error.response?.statusCode ?? '?'})
-  Error:   ${error.message}
-  Request: ${body ?? '∅'}
-  Detail:  ${error.response?.data}
-''');
+    debugPrint('''════════ ERROR ════════
+url: $url
+method: $method
+status: ${error.response?.statusCode ?? "?"}
+error: ${error.message}
+params: ${_toJsonStr(body)}
+detail: ${_toJsonStr(error.response?.data)}''');
   }
 
-  String _fmtMap(Map<String, dynamic> map) {
-    return map.entries.map((e) => '${e.key}=${e.value}').join(', ');
+  String _toJsonStr(dynamic obj, {int maxLen = 100000}) {
+    if (obj == null) return 'null';
+    if (obj is String) {
+      try {
+        final parsed = jsonDecode(obj);
+        return _truncate(_prettyJson(parsed), maxLen);
+      } catch (_) {
+        return obj;
+      }
+    }
+    try {
+      return _truncate(_prettyJson(obj), maxLen);
+    } catch (_) {
+      return obj.toString();
+    }
+  }
+
+  /// Pretty-print JSON with 2-space indent.
+  String _prettyJson(dynamic obj) {
+    const encoder = JsonEncoder.withIndent('  ');
+    return encoder.convert(obj);
   }
 
   String _truncate(String s, int max) {
     if (s.length <= max) return s;
     return '${s.substring(0, max)}\n... (truncated ${s.length - max} chars)';
   }
-
 }
